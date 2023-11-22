@@ -1,1 +1,1 @@
-# NeuralNetwork-
+This Ruby code defines a simple NeuralNetwork class with methods for feedforward and training using backpropagation. The network is trained to solve the XOR problem. The matrix operations are performed using the Matrix class from the matrix standard library.
