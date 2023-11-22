@@ -1,0 +1,72 @@
+class NeuralNetwork
+  def initialize(input_size, hidden_size, output_size)
+    @input_size = input_size
+    @hidden_size = hidden_size
+    @output_size = output_size
+
+    @weights_ih = random_weights(input_size, hidden_size)
+    @weights_ho = random_weights(hidden_size, output_size)
+
+    @bias_h = random_weights(1, hidden_size)
+    @bias_o = random_weights(1, output_size)
+  end
+
+  def random_weights(rows, cols)
+    Array.new(rows) { Array.new(cols) { rand(-1.0..1.0) } }
+  end
+
+  def sigmoid(x)
+    1 / (1 + Math.exp(-x))
+  end
+
+  def sigmoid_derivative(x)
+    sigmoid(x) * (1 - sigmoid(x))
+  end
+
+  def feedforward(input)
+    hidden = input.dot(@weights_ih).add(@bias_h).map { |val| sigmoid(val) }
+    output = hidden.dot(@weights_ho).add(@bias_o).map { |val| sigmoid(val) }
+    output
+  end
+
+  def train(inputs, targets, epochs, learning_rate)
+    epochs.times do
+      inputs.each_with_index do |input, i|
+        target = targets[i]
+
+        # Forward pass
+        hidden = input.dot(@weights_ih).add(@bias_h).map { |val| sigmoid(val) }
+        output = hidden.dot(@weights_ho).add(@bias_o).map { |val| sigmoid(val) }
+
+        # Backward pass
+        output_error = target.subtract(output)
+        d_output = output.map { |val| sigmoid_derivative(val) }
+        output_delta = output_error.multiply(d_output)
+
+        hidden_error = output_delta.dot(@weights_ho.transpose)
+        d_hidden = hidden.map { |val| sigmoid_derivative(val) }
+        hidden_delta = hidden_error.multiply(d_hidden)
+
+        # Update weights and biases
+        @weights_ho = @weights_ho.add(hidden.transpose.dot(output_delta).multiply(learning_rate))
+        @bias_o = @bias_o.add(output_delta.sum(0).multiply(learning_rate))
+
+        @weights_ih = @weights_ih.add(input.transpose.dot(hidden_delta).multiply(learning_rate))
+        @bias_h = @bias_h.add(hidden_delta.sum(0).multiply(learning_rate))
+      end
+    end
+  end
+end
+
+# Example usage for XOR problem
+inputs = Matrix[[0, 0], [0, 1], [1, 0], [1, 1]]
+targets = Matrix[[0], [1], [1], [0]]
+
+nn = NeuralNetwork.new(2, 4, 1)
+puts "Before training:"
+puts nn.feedforward(inputs)
+
+nn.train(inputs, targets, 10000, 0.1)
+
+puts "\nAfter training:"
+puts nn.feedforward(inputs)
